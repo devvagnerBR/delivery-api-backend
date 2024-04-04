@@ -3,10 +3,13 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsup src --out-dir build",
-    "start": "node build/server.js"
+    "build": "tsup src",
+    "start": "node dist/server.js"
   },
   "keywords": [],
   "author": "devvagnerbr",
