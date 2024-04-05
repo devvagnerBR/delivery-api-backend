@@ -22,4 +22,9 @@ export class USER_DATABASE {
         const user = await PRISMA.user.findUnique( { where: { email } } )
         return user;
     }
+
+    async findById( id: string ): Promise<User | null> {
+        const user = await PRISMA.user.findUnique( { where: { id } } )
+        return user;
+    }
 }

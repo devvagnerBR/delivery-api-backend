@@ -22,9 +22,17 @@ export class USER_BUSINESS {
         const passwordHash = await bcrypt.hash( password, env.BCRYPT_SALT );
 
         await this.userDatabase.create( { email, username, password: passwordHash } );
+    }
 
+    async authenticate( { email, password }: { email: string, password: string } ) {
 
+        const user = await this.userDatabase.findByEmail( email );
+        if ( !user ) throw new CustomError( 404, 'Usuário não encontrado' );
 
+        const doesPasswordMatch = await bcrypt.compare( password, user.password );
+        if ( !doesPasswordMatch ) throw new CustomError( 401, 'email ou senha incorretos' );
+
+        return user;
     }
 
 }
