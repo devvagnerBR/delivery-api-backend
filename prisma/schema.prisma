@@ -7,12 +7,61 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  username  String   @unique
+  id           String        @id @default(uuid())
+  email        String
+  username     String
+  password     String
+  role         Roles         @default(USER)
+  client_id    String
+  client       Clients?      @relation(fields: [client_id], references: [id])
+  PersonalData PersonalData?
 
+  @@unique([username, client_id])
+  @@unique([email, client_id])
   @@map("users")
+}
+
+model Clients {
+  id         String   @id @default(uuid())
+  name       String
+  email      String   @unique
+  phone      String   @unique
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  role       Roles    @default(CLIENT)
+  users      User[]
+
+  @@map("clients")
+}
+
+model PersonalData {
+  id                  String          @id @default(uuid())
+  name                String?
+  phone               String?
+  cep                 String?
+  street              String? // logradouro
+  neighborhood        String? // bairro
+  city                String? // cidade
+  state               String? // uf
+  complement          String? // complemento
+  last_payment_method PaymentMethods?
+  user_id             String          @unique
+  user                User?           @relation(fields: [user_id], references: [id])
+
+  @@map("personal_data")
+}
+
+enum PaymentMethods {
+  CREDIT_ON_DELIVERY
+  DEBIT_ON_DELIVERY
+  PIX
+  MONEY
+}
+
+enum Roles {
+  ADMIN
+  CLIENT
+  USER
 }

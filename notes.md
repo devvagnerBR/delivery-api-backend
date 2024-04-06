@@ -8,3 +8,8 @@ npx prisma migrate dev --name update = para atualizar a migracao
 
 
     // "build": "tsup src --out-dir build",
+
+
+
+
+    ## FUNCIONALIDADES

@@ -1,12 +1,12 @@
 import fastify from "fastify";
-import { PrismaClient } from "@prisma/client"
-import { userRoutes } from "./routes/user-router";
 import { ZodError } from "zod";
 import { CustomError } from "./entities/custom-error";
 import fastifyJwt from "@fastify/jwt";
 import { env } from "./env";
 import cors from '@fastify/cors'
 import fastifyCookie from "@fastify/cookie";
+import { adminRoutes } from "./routes/admin-router";
+import { userRouter } from "./routes/user-router";
 
 
 export const app = fastify();
@@ -30,7 +30,8 @@ app.register( fastifyJwt, {
 
 
 
-app.register( userRoutes );
+app.register( userRouter );
+app.register( adminRoutes );
 app.register( fastifyCookie )
 
 app.setErrorHandler( ( error, _, res ) => {
