@@ -7,7 +7,6 @@ const envSchema = z.object( {
     JWT_EXPIRES_IN: z.string(),
     JWT_SECRET: z.string(),
     BCRYPT_SALT: z.coerce.number().min( 6 ).max( 12 ),
-    CLIENT_TOKEN_ACCESS: z.string(),
     // NODEMAILER_EMAIL: z.string().email(),
     // NODEMAILER_PASSWORD: z.string(),
     // NODEMAILER_HASH: z.string(),

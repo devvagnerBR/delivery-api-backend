@@ -21,7 +21,8 @@ Api Delivery
 - [X] Deve ser possível se autenticar;
 - [X] Deve ser possível pegar os dados do perfil do usuário (sem senha);
 - [X] Deve ser possível pegar os dados pessoais do usuário (sem senha);
-- [ ] Deve ser possível salvar no banco os dados pessoais de entrega e pagamento;
+- [X] Deve ser possível salvar no banco os dados pessoais de entrega e pagamento;
+- [X] Deve ser possível atualizar os dados pessoais do usuário;
 - [ ] Deve ser possível inserir ou remover item do carrinho;
 - [ ] Deve ser possível ao finalizar compra, salvar os dados no banco e deletar os dados do carrinho;
 - [ ] Deve ser possível atualizar o perfil do usuário;
