@@ -1,11 +1,11 @@
 import { PRISMA } from "@/data-providers/prisma";
-import {  Clients, Prisma } from "@prisma/client";
+import { Clients, Prisma } from "@prisma/client";
 
 export class ADMIN_DATABASE {
 
-    async registerNewClient( { name, email, phone }: Prisma.ClientsCreateInput ) {
+    async registerNewClient( { name, email, phone, password }: Prisma.ClientsCreateInput ) {
         await PRISMA.clients.create( {
-            data: { name, email, phone }
+            data: { name, email, phone, password }
         } )
     }
 

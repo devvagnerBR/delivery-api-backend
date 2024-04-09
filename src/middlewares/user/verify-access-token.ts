@@ -1,4 +1,4 @@
-import { CLIENT_DATABASE } from '@/core/database/client.database';
+import { CLIENT_DATABASE } from '@/core/database/client-database';
 import { FastifyReply, FastifyRequest, RouteGenericInterface } from 'fastify';
 import { z } from 'zod';
 

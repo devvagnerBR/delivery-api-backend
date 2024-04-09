@@ -8,14 +8,20 @@ datasource db {
 }
 
 model User {
-  id           String        @id @default(uuid())
-  email        String
-  username     String
-  password     String
-  role         Roles         @default(USER)
-  client_id    String
-  client       Clients?      @relation(fields: [client_id], references: [id])
-  PersonalData PersonalData?
+  id       String @id @default(uuid())
+  email    String
+  username String
+
+  name  String?
+  phone String?
+
+  password  String
+  role      Roles      @default(USER)
+  client_id String
+  client    Clients?   @relation(fields: [client_id], references: [id], onDelete: Cascade)
+  CartItems CartItem[]
+  orders    Order[]
+  address   Address?
 
   @@unique([username, client_id])
   @@unique([email, client_id])
@@ -23,34 +29,96 @@ model User {
 }
 
 model Clients {
-  id         String   @id @default(uuid())
+  id         String    @id @default(uuid())
   name       String
-  email      String   @unique
-  phone      String   @unique
-  is_active  Boolean  @default(true)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  role       Roles    @default(CLIENT)
+  email      String    @unique
+  phone      String    @unique
+  password   String    @default("12345678")
+  is_active  Boolean   @default(true)
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  role       Roles     @default(CLIENT)
   users      User[]
+  products   Product[]
 
   @@map("clients")
 }
 
-model PersonalData {
-  id                  String          @id @default(uuid())
-  name                String?
-  phone               String?
-  cep                 String?
-  street              String? // logradouro
-  neighborhood        String? // bairro
-  city                String? // cidade
-  state               String? // uf
-  complement          String? // complemento
-  last_payment_method PaymentMethods?
-  user_id             String          @unique
-  user                User?           @relation(fields: [user_id], references: [id])
+model Address {
+  id           String     @id @default(uuid())
+  cep          String
+  street       String
+  neighborhood String
+  city         String
+  state        String
+  complement   String
+  user_id      String     @unique
+  user         User?      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  CartItem     CartItem[]
+  Order        Order[]
 
-  @@map("personal_data")
+  @@map("address")
+}
+
+model Product {
+  id          String         @id @default(uuid())
+  name        String
+  price       Float
+  description String
+  image       String?
+  created_at  DateTime       @default(now())
+  updated_at  DateTime       @updatedAt
+  is_active   Boolean        @default(true)
+  is_deleted  Boolean?        @default(false)
+  category    String
+  client_id   String?
+  Clients     Clients?       @relation(fields: [client_id], references: [id], onDelete: Cascade)
+  CartItems   CartItem[]
+  Order       Order?         @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  order_id    String?
+  OrderIten   OrderProduct[]
+
+  @@unique([name, client_id])
+  @@map("products")
+}
+
+model CartItem {
+  id Int @id @default(autoincrement())
+
+  user_id    String
+  product_id String
+  quantity   Int
+  address_id String?
+  address    Address? @relation(fields: [address_id], references: [id], onDelete: Cascade)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  order_id   String?
+
+  @@map("cart_item")
+}
+
+model Order {
+  id      String @id @default(uuid())
+  user_id String
+
+  total      Float
+  address    Address        @relation(fields: [address_id], references: [id], onDelete: Cascade)
+  user       User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  created_at DateTime       @default(now())
+  products   Product[]
+  itens      OrderProduct[]
+  address_id String
+}
+
+model OrderProduct {
+  id         String  @id @default(uuid())
+  quantity   Int
+  order_id   String
+  order      Order   @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  product_id String
+  product    Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
 }
 
 enum PaymentMethods {

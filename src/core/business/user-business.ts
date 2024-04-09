@@ -1,8 +1,9 @@
-import { Prisma } from "@prisma/client";
+import { Address, Prisma } from "@prisma/client";
 import { USER_DATABASE } from "../database/user-database";
 import *  as bcrypt from 'bcryptjs';
 import { env } from "@/env";
 import { CustomError } from "@/entities/custom-error";
+import { CLIENT_DATABASE } from "../database/client-database";
 
 
 
@@ -10,7 +11,8 @@ import { CustomError } from "@/entities/custom-error";
 export class USER_BUSINESS {
 
     constructor(
-        private userDatabase: USER_DATABASE
+        private userDatabase: USER_DATABASE,
+        private clientDatabase: CLIENT_DATABASE
     ) { }
 
     async create( { email, username, password }: Prisma.UserCreateInput, clientId: string ) {
@@ -45,22 +47,74 @@ export class USER_BUSINESS {
         return user;
     }
 
-    async getPersonalData( userId: string ) {
+    async registerAddress( userId: string, data: {
+        cep?: string;
+        street?: string;
+        neighborhood?: string;
+        city?: string;
+        state?: string;
+        complement?: string;
+    } ) {
 
-        const user = await this.userDatabase.findById( userId );
+        await this.userDatabase.registerAddress( userId, data );
+    }
+
+    async addProductToCart( userId: string, productId: string, clientId: string ) {
+
+        const user = await this.userDatabase.findById( userId, clientId );
         if ( !user ) throw new CustomError( 404, 'Usuário não encontrado' );
 
-        const personalData = await this.userDatabase.getPersonalData( userId );
-        if ( !personalData ) throw new CustomError( 404, 'Dados pessoais não encontrados' );
+        const product = await this.clientDatabase.getProductById( productId, user.client_id );
+        if ( !product ) throw new CustomError( 404, 'Produto não encontrado ou não existe' );
+        if ( product.client_id !== user.client_id ) throw new CustomError( 404, 'Produto não pertence ao cliente' );
 
-        return personalData;
+        await this.userDatabase.addProductToCart( userId, productId );
+    }
+
+    async removeProductFromCart( userId: string, productId: string, clientId: string ) {
+
+        const user = await this.userDatabase.findById( userId, clientId );
+        if ( !user ) throw new CustomError( 404, 'Usuário não encontrado' );
+
+        const product = await this.clientDatabase.getProductById( productId, user.client_id );
+        if ( !product ) throw new CustomError( 404, 'Produto não encontrado ou não existe' );
+        if ( product.client_id !== user.client_id ) throw new CustomError( 404, 'Produto não pertence ao cliente' );
+
+        await this.userDatabase.removeProductFromCart( userId, productId );
+    }
+
+    async getCart( userId: string ) {
+
+
+        const cart = await this.userDatabase.getCart( userId );
+        if ( !cart ) throw new CustomError( 404, 'Carrinho não encontrado' );
+
+        return cart;
+    }
+
+    async registerOrder( userId: string, body: {
+        cep?: string;
+        street?: string;
+        neighborhood?: string;
+        city?: string;
+        state?: string;
+        complement?: string;
+    } ) {
+
+        const cart = await this.userDatabase.getCart( userId );
+        if ( !cart ) throw new CustomError( 404, 'Carrinho não encontrado' );
+        if ( cart.items.length === 0 ) throw new CustomError( 404, 'Carrinho está vazio' );
+
+        await this.userDatabase.registerOrder( userId, body );
 
     }
 
-    async savePersonalData( userId: string, data: Prisma.PersonalDataCreateInput ) {
+    async getOrders( userId: string ) {
 
-        await this.userDatabase.savePersonalData( userId, data );
+        const orders = await this.userDatabase.getOrders( userId );
+        if ( !orders ) throw new CustomError( 404, 'Nenhuma ordem encontrada' );
 
+        return orders;
     }
 
 }

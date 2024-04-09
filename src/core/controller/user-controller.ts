@@ -89,27 +89,15 @@ export async function USER_CONTROLLER() {
         const { token: clientId } = tokenAccessParamsSchema.parse( req.params );
 
         const userId = req.user.sub;
-        console.log( userId );
 
         const user = await userFactory.profile( userId, clientId );
 
         return res.status( 200 ).send( user );
     }
 
+    async function registerAddress( req: FastifyRequest, res: FastifyReply ) {
 
-    async function getPersonalData( req: FastifyRequest, res: FastifyReply ) {
-
-        const userId = req.user.sub;
-        const personalData = await userFactory.getPersonalData( userId );
-
-        return res.status( 200 ).send( personalData );
-    }
-
-    async function updatePersonalData( req: FastifyRequest, res: FastifyReply ) {
-
-        const personalDataSchema = z.object( {
-            name: z.string().optional(),
-            phone: z.string().optional(),
+        const body = z.object( {
             cep: z.string().optional(),
             street: z.string().optional(),
             neighborhood: z.string().optional(),
@@ -118,22 +106,98 @@ export async function USER_CONTROLLER() {
             complement: z.string().optional(),
         } )
 
-        const { name, phone, cep, street, neighborhood, city, state, complement } = personalDataSchema.parse( req.body );
-        if ( !name && !phone && !cep && !street && !neighborhood && !city && !state && !complement ) return res.status( 400 ).send( { message: 'Nenhum dado foi fornecido' } );
+        const { cep, street, neighborhood, city, state, complement } = body.parse( req.body );
 
         const userId = req.user.sub;
 
-        await userFactory.savePersonalData( userId, { name, phone, cep, street, neighborhood, city, state, complement } );
+        await userFactory.registerAddress( userId, { cep, street, neighborhood, city, state, complement } );
 
-        return res.status( 200 ).send( { message: 'Dados pessoais atualizados com sucesso' } );
+        return res.status( 201 ).send( { message: 'Endereço registrado com sucesso' } );
     }
 
+    async function addProductToCart( req: FastifyRequest, res: FastifyReply ) {
+
+
+        const paramsSchema = z.object( {
+            token: z.string( { required_error: 'Token de acesso é obrigatório' } ),
+            productId: z.string( { required_error: 'Id do produto é obrigatório' } )
+        } )
+
+        const { token: clientId, productId } = paramsSchema.parse( req.params );
+
+        const userId = req.user.sub;
+
+        await userFactory.addProductToCart( userId, productId, clientId );
+
+        return res.status( 200 ).send( { message: 'Produto adicionado ao carrinho' } );
+
+    }
+
+    async function removeProductFromCart( req: FastifyRequest, res: FastifyReply ) {
+
+        const paramsSchema = z.object( {
+            productId: z.string( { required_error: 'Id do produto é obrigatório' } )
+        } )
+
+        const { productId } = paramsSchema.parse( req.params );
+        
+        const tokenAccessParamsSchema = z.object( { token: z.string( { required_error: 'Token de acesso é obrigatório' } ) } )
+        const { token: clientId } = tokenAccessParamsSchema.parse( req.params );
+
+
+        const userId = req.user.sub;
+
+        await userFactory.removeProductFromCart( userId, productId, clientId );
+
+        return res.status( 200 ).send( { message: 'Produto removido do carrinho' } );
+    }
+
+    async function getCart( req: FastifyRequest, res: FastifyReply ) {
+
+        const userId = req.user.sub;
+        const cart = await userFactory.getCart( userId );
+
+        return res.status( 200 ).send( cart );
+    }
+
+    async function registerOrder( req: FastifyRequest, res: FastifyReply ) {
+
+        const bodySchema = z.object( {
+            cep: z.string().optional(),
+            street: z.string().optional(),
+            neighborhood: z.string().optional(),
+            city: z.string().optional(),
+            state: z.string().optional(),
+            complement: z.string().optional(),
+        } )
+
+        const { cep, street, neighborhood, city, state, complement } = bodySchema.parse( req.body );
+
+        const userId = req.user.sub;
+
+        await userFactory.registerOrder( userId, { cep, street, neighborhood, city, state, complement } );
+
+        return res.status( 201 ).send( { message: 'Pedido registrado com sucesso' } );
+    }
+
+    async function getOrders( req: FastifyRequest, res: FastifyReply ) {
+
+        const userId = req.user.sub;
+
+        const orders = await userFactory.getOrders( userId );
+
+        return res.status( 200 ).send( orders );
+    }
 
     return {
         create,
         authenticate,
         profile,
-        getPersonalData,
-        updatePersonalData
+        registerAddress,
+        addProductToCart,
+        getCart,
+        removeProductFromCart,
+        registerOrder,
+        getOrders
     }
 }

@@ -1,12 +1,31 @@
 import { PRISMA } from "@/data-providers/prisma"
 import { CustomError } from "@/entities/custom-error";
-import { Prisma, User, PersonalData } from "@prisma/client";
+import { Prisma, CartItem, User, Address } from "@prisma/client";
 
 
 type UserWithoutPassword = Omit<User, 'password' | 'client_id' | 'role'>
 
+type CartWithTotalOrder = {
+    total_order: number;
+    items: CartItemWithProduct[];
+}
+
+type CartItemWithProduct = {
+
+    product: {
+        id: string;
+        name: string;
+        price: number;
+        quantity: number;
+        total: number;
+        description: string;
+        image: string | null;
+        category: string;
+    };
+};
 
 export class USER_DATABASE {
+
 
     async create( data: Prisma.UserCreateInput, clientId: string ): Promise<void> {
 
@@ -44,10 +63,11 @@ export class USER_DATABASE {
         return user;
     }
 
-    async findById( id: string ): Promise<User | null> {
+    async findById( id: string, clientId: string ): Promise<User | null> {
         const user = await PRISMA.user.findUnique( {
             where: {
-                id
+                id,
+                client_id: clientId
             }
         } )
         return user;
@@ -64,8 +84,11 @@ export class USER_DATABASE {
             },
             select: {
                 id: true,
+                name: true,
                 email: true,
                 username: true,
+                address: true,
+                phone: true,
             }
         } );
 
@@ -73,27 +96,21 @@ export class USER_DATABASE {
         return user;
     }
 
-    async getPersonalData( userId: string ): Promise<PersonalData | null> {
-
-        const personalData = await PRISMA.personalData.findFirst( {
+    async getAddress( userId: string ): Promise<Address | null> {
+        const address = await PRISMA.address.findFirst( {
             where: {
                 user_id: userId
             }
         } )
-        return personalData;
+        return address;
     }
 
-    async savePersonalData( userId: string, data: any ): Promise<void> {
+    async registerAddress( userId: string, data: any ): Promise<void> {
 
 
-        const user = await PRISMA.user.findUnique( { where: { id: userId } } );
-        if ( !user ) {
-            throw new Error( 'User not found' );
-        }
-
-        const personalData = await PRISMA.personalData.findUnique( { where: { user_id: userId } } );
-        if ( personalData ) {
-            await PRISMA.personalData.update( {
+        const address = await PRISMA.address.findFirst( { where: { user_id: userId } } );
+        if ( address ) {
+            await PRISMA.address.update( {
                 where: { user_id: userId },
                 data: {
                     ...data,
@@ -101,27 +118,212 @@ export class USER_DATABASE {
                 },
             } )
         } else {
-            await PRISMA.personalData.create( {
+            await PRISMA.address.create( {
                 data: {
                     ...data,
                     user_id: userId
-                },
+                }
             } )
         }
     }
-    // async savePersonalData( userId: string, data: Prisma.PersonalDataCreateInput ): Promise<void> {
-    //     await PRISMA.personalData.create( {
 
-    //         data: {
-    //             ...data,
-    //             user: {
-    //                 connect: {
-    //                     id: userId
-    //                 }
-    //             }
-    //         }
+    async getCartItemByProductId( userId: string, productId: string ): Promise<CartItem | null> {
+        const cartItem = await PRISMA.cartItem.findFirst( {
+            where: {
+                user_id: userId,
+                product_id: productId,
+            }
+        } )
+        return cartItem;
+    }
 
-    //     } )
-    // }
+    async addProductToCart( userId: string, productId: string, ): Promise<void> {
+
+        const existingCartItem = await this.getCartItemByProductId( userId, productId );
+
+        if ( existingCartItem ) {
+            await PRISMA.cartItem.update( {
+                where: {
+                    id: existingCartItem.id
+                },
+                data: {
+                    quantity: {
+                        increment: 1
+                    }
+                }
+            } );
+        } else {
+            await PRISMA.cartItem.create( {
+                data: {
+                    user_id: userId,
+                    product_id: productId,
+                    quantity: 1
+                }
+            } );
+        }
+    }
+
+    async removeProductFromCart( userId: string, productId: string ): Promise<void> {
+
+        const existingCartItem = await this.getCartItemByProductId( userId, productId );
+
+        if ( !existingCartItem ) throw new CustomError( 404, 'Produto não encontrado no carrinho' )
+        if ( existingCartItem && existingCartItem.quantity > 1 ) {
+
+            await PRISMA.cartItem.update( {
+                where: {
+                    id: existingCartItem.id
+                },
+                data: {
+                    quantity: {
+                        decrement: 1
+                    }
+                }
+            } );
+        }
+
+        if ( existingCartItem && existingCartItem.quantity === 1 ) {
+            await PRISMA.cartItem.delete( {
+                where: {
+                    id: existingCartItem.id
+                }
+            } );
+        }
+    }
+
+    async getCart( userId: string ): Promise<CartWithTotalOrder> {
+
+        const cart = await PRISMA.cartItem.findMany( {
+            where: {
+                user_id: userId,
+            }, select: {
+                quantity: true,
+                product: {
+                    select: {
+                        id: true,
+                        name: true,
+                        price: true,
+                        image: true,
+                        category: true,
+                        description: true
+
+                    }
+                }
+            }
+        } )
+
+        const formatedCart = cart.map( item => {
+            return {
+                product: {
+                    id: item.product.id,
+                    name: item.product.name,
+                    price: item.product.price,
+                    quantity: item.quantity,
+                    total: item.product.price * item.quantity,
+                    image: item.product.image,
+                    category: item.product.category,
+                    description: item.product.description
+                }
+            }
+        } )
+
+
+        const totalOrder = formatedCart.reduce( ( acc, item ) => acc + item.product.price * item.product.quantity, 0 );
+        return { total_order: totalOrder, items: formatedCart };
+    }
+
+    async registerOrder( userId: string, body: any, ): Promise<void> {
+
+        const cart = await this.getCart( userId );
+        if ( !cart ) throw new CustomError( 404, 'Carrinho não encontrado' );
+        if ( cart.items.length === 0 ) throw new CustomError( 404, 'Carrinho está vazio' );
+
+        const address = await this.getAddress( userId );
+        if ( !address ) throw new CustomError( 404, 'Endereço não encontrado' );
+
+        if ( body ) await this.registerAddress( userId, body );
+
+        await PRISMA.order.create( {
+
+            data: {
+                user_id: userId,
+                address_id: address.id,
+                total: cart.total_order,
+                itens: {
+                    create: cart.items.map( item => {
+                        return {
+                            product_id: item.product.id,
+                            quantity: item.product.quantity,
+                        }
+                    } )
+                }
+            }
+        } )
+
+        await PRISMA.cartItem.deleteMany( {
+            where: {
+                user_id: userId
+            }
+        } )
+    }
+
+    async getOrders( userId: string ): Promise<any> {
+
+        const orders = await PRISMA.order.findMany( {
+            where: {
+                user_id: userId
+            }, orderBy: { created_at: 'asc' },
+            select: {
+                user_id: false,
+                address_id: false,
+                id: true,
+                total: true,
+                created_at: true,
+                user: {
+                    select: {
+                        name: true,
+                        email: true,
+                        phone: true,
+                        address: true
+                    }
+                },
+                itens: {
+                    select: {
+                        product: true,
+                        quantity: true
+                    }
+                }
+            }
+        } )
+
+        return orders;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 }

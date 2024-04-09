@@ -1,7 +1,7 @@
 import { ADMIN_CONTROLLER } from "@/core/controller/admin-controller";
-import { CLIENT_CONTROLLER } from "@/core/controller/client.controller";
+import { CLIENT_CONTROLLER } from "@/core/controller/client-controller";
+import { verifyClientIsOwner } from "@/middlewares/client/verify-client-is-owner";
 import { verifyAccessToken } from "@/middlewares/user/verify-access-token";
-import { verifyAdminRole } from "@/middlewares/admin/verify-admin-role";
 import { verifyJWT } from "@/middlewares/verify-jwt";
 import { FastifyInstance } from "fastify";
 
@@ -10,15 +10,15 @@ export const clientRoutes = async ( app: FastifyInstance ) => {
 
     const client = await CLIENT_CONTROLLER();
 
+    app.addHook( 'onRequest', verifyAccessToken )
 
-    // app.post( '/client/:token/create', { onRequest: [verifyJWT, verifyAccessToken] }, client )
+    app.post( '/:token/client/authenticate', client.authenticate )
+    app.get( '/:token/client/profile', { onRequest: [verifyJWT, verifyClientIsOwner] }, client.profile )
 
-    /*
-    FOI CRIADO UM MIDDLEWARE PARA VERIFICAR SE O TOKEN DE ACESS DO CLIENTE É VÁLIDO
-    todas as rotas a partir do client devem ser verificadas se o token de acesso é válido
-
-    */
-
+    //products
+    app.post( '/:token/client/product/create', { onRequest: [verifyJWT, verifyClientIsOwner] }, client.registerProduct )
+    app.get( '/:token/client/product/list', { onRequest: [verifyJWT, verifyClientIsOwner] }, client.listProducts )
+    app.put( '/:token/client/product/update/:product_id', { onRequest: [verifyJWT, verifyClientIsOwner] }, client.updateProduct )
 
 
 }

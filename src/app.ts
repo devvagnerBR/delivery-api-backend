@@ -7,6 +7,7 @@ import cors from '@fastify/cors'
 import fastifyCookie from "@fastify/cookie";
 import { adminRoutes } from "./routes/admin-router";
 import { userRouter } from "./routes/user-router";
+import { clientRoutes } from "./routes/client-router";
 
 
 export const app = fastify();
@@ -32,6 +33,7 @@ app.register( fastifyJwt, {
 
 app.register( userRouter );
 app.register( adminRoutes );
+app.register( clientRoutes );
 app.register( fastifyCookie )
 
 app.setErrorHandler( ( error, _, res ) => {
