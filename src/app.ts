@@ -13,7 +13,7 @@ import { clientRoutes } from "./routes/client-router";
 export const app = fastify();
 
 app.register( cors, {
-    origin: ['http://localhost:3000', 'http://localhost:3003'],
+    origin: ['http://localhost:3000', 'http://localhost:3003', 'https://freela-bronks-burguer.vercel.app'],
     credentials: true,
 } )
 
