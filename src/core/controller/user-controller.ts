@@ -190,10 +190,9 @@ export async function USER_CONTROLLER() {
         } )
 
         const { p: page } = paginationQuerySchema.parse( req.query );
-        console.log( page );
 
         const orders = await userFactory.getOrders( userId, page );
-
+ 
         return res.status( 200 ).send( { ...orders, totalItems: orders.totalItems } );
     }
 
@@ -220,7 +219,7 @@ export async function USER_CONTROLLER() {
 
     async function updateAddress( req: FastifyRequest, res: FastifyReply ) {
 
-        
+
         const bodySchema = z.object( {
             cep: z.string().optional(),
             street: z.string().optional(),

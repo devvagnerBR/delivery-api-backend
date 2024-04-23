@@ -310,8 +310,13 @@ export class USER_DATABASE {
         } )
 
 
-        const totalItems = await PRISMA.order.count();
+        const totalItems = await PRISMA.order.count({
+            where: {
+                user_id: userId
+            }
+        });
 
+      
         return { orders, totalItems }
     }
 
