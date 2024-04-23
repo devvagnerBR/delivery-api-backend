@@ -69,7 +69,7 @@ model Product {
   created_at  DateTime       @default(now())
   updated_at  DateTime       @updatedAt
   is_active   Boolean        @default(true)
-  is_deleted  Boolean?        @default(false)
+  is_deleted  Boolean?       @default(false)
   category    String
   client_id   String?
   Clients     Clients?       @relation(fields: [client_id], references: [id], onDelete: Cascade)
@@ -100,16 +100,18 @@ model CartItem {
 }
 
 model Order {
-  id      String @id @default(uuid())
-  user_id String
+  id           String @id @default(uuid())
+  order_number Int    @default(autoincrement())
+  user_id      String
 
-  total      Float
-  address    Address        @relation(fields: [address_id], references: [id], onDelete: Cascade)
-  user       User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  created_at DateTime       @default(now())
-  products   Product[]
-  itens      OrderProduct[]
-  address_id String
+  payment_method PaymentMethods
+  total          Float
+  address        Address        @relation(fields: [address_id], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  created_at     DateTime       @default(now())
+  products       Product[]
+  itens          OrderProduct[]
+  address_id     String
 }
 
 model OrderProduct {

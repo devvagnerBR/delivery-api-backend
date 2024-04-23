@@ -11,17 +11,14 @@ type CartWithTotalOrder = {
 }
 
 type CartItemWithProduct = {
-
-    product: {
-        id: string;
-        name: string;
-        price: number;
-        quantity: number;
-        total: number;
-        description: string;
-        image: string | null;
-        category: string;
-    };
+    id: string;
+    name: string;
+    price: number;
+    quantity: number;
+    total: number;
+    description: string;
+    image: string | null;
+    category: string;
 };
 
 export class USER_DATABASE {
@@ -196,7 +193,8 @@ export class USER_DATABASE {
         const cart = await PRISMA.cartItem.findMany( {
             where: {
                 user_id: userId,
-            }, select: {
+            }, orderBy: { created_at: 'asc' },
+            select: {
                 quantity: true,
                 product: {
                     select: {
@@ -212,29 +210,37 @@ export class USER_DATABASE {
             }
         } )
 
-        const formatedCart = cart.map( item => {
+        const formattedCart = cart.map( item => {
             return {
-                product: {
-                    id: item.product.id,
-                    name: item.product.name,
-                    price: item.product.price,
-                    quantity: item.quantity,
-                    total: item.product.price * item.quantity,
-                    image: item.product.image,
-                    category: item.product.category,
-                    description: item.product.description
-                }
+                id: item.product.id,
+                name: item.product.name,
+                price: item.product.price,
+                quantity: item.quantity,
+                total: item.product.price * item.quantity,
+                image: item.product.image,
+                category: item.product.category,
+                description: item.product.description
+
             }
         } )
 
 
-        const totalOrder = formatedCart.reduce( ( acc, item ) => acc + item.product.price * item.product.quantity, 0 );
-        return { total_order: totalOrder, items: formatedCart };
+        const totalOrder = formattedCart.reduce( ( acc, item ) => acc + item.price * item.quantity, 0 );
+        return { total_order: totalOrder, items: formattedCart };
     }
 
-    async registerOrder( userId: string, body: any, ): Promise<void> {
+    async registerOrder( userId: string, body: {
+        cep?: string;
+        street?: string;
+        neighborhood?: string;
+        city?: string;
+        state?: string;
+        complement?: string;
+    }, paymentMethod: 'CREDIT_ON_DELIVERY' | 'DEBIT_ON_DELIVERY' | 'PIX' | 'MONEY' ): Promise<void> {
+
 
         const cart = await this.getCart( userId );
+
         if ( !cart ) throw new CustomError( 404, 'Carrinho não encontrado' );
         if ( cart.items.length === 0 ) throw new CustomError( 404, 'Carrinho está vazio' );
 
@@ -249,11 +255,12 @@ export class USER_DATABASE {
                 user_id: userId,
                 address_id: address.id,
                 total: cart.total_order,
+                payment_method: paymentMethod,
                 itens: {
                     create: cart.items.map( item => {
                         return {
-                            product_id: item.product.id,
-                            quantity: item.product.quantity,
+                            product_id: item.id,
+                            quantity: item.quantity,
                         }
                     } )
                 }
@@ -267,18 +274,24 @@ export class USER_DATABASE {
         } )
     }
 
-    async getOrders( userId: string ): Promise<any> {
+    async getOrders( userId: string, page: number = 1 ): Promise<any> {
+
+        const take = 3
 
         const orders = await PRISMA.order.findMany( {
+            take,
+            skip: take * ( page - 1 ),
             where: {
                 user_id: userId
-            }, orderBy: { created_at: 'asc' },
+            }, orderBy: { created_at: 'desc' },
             select: {
+                order_number: true,
                 user_id: false,
                 address_id: false,
                 id: true,
                 total: true,
                 created_at: true,
+                payment_method: true,
                 user: {
                     select: {
                         name: true,
@@ -296,34 +309,55 @@ export class USER_DATABASE {
             }
         } )
 
-        return orders;
+
+        const totalItems = await PRISMA.order.count();
+
+        return { orders, totalItems }
+    }
+
+    async updateProfile( clientId: string, userId: string, name?: string, phone?: string, username?: string ) {
+        await PRISMA.user.update( {
+            where: {
+                id: userId,
+                client_id: clientId
+            },
+            data: {
+                name: name ?? undefined,
+                username: username ?? undefined,
+                phone: phone ?? undefined
+            }
+        } )
     }
 
 
+    async updateAddress( userId: string, cep?: string, city?: string, state?: string, street?: string, neighborhood?: string, complement?: string ) {
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        const address = await PRISMA.address.findFirst( { where: { user_id: userId } } );
+        if ( address ) {
+            await PRISMA.address.update( {
+                where: { user_id: userId },
+                data: {
+                    cep: cep ?? undefined,
+                    city: city ?? undefined,
+                    state: state ?? undefined,
+                    street: street ?? undefined,
+                    neighborhood: neighborhood ?? undefined,
+                    complement: complement ?? undefined,
+                }
+            } )
+        } else if ( cep && city && state && street && neighborhood && complement ) {
+            await PRISMA.address.create( {
+                data: {
+                    cep,
+                    city,
+                    state,
+                    street,
+                    neighborhood,
+                    complement,
+                    user_id: userId
+                }
+            } )
+        }
+    }
 
 }

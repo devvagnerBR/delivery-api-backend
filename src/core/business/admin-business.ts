@@ -10,8 +10,14 @@ export class ADMIN_BUSINESS {
 
     async registerNewClient( { name, email, phone }: Prisma.ClientsCreateInput ) {
 
-        const password = generatePassword();
-        
+        let password;
+        let passwordExists;
+
+        do {
+            password = generatePassword();
+            passwordExists = await this.adminDatabase.checkIfPasswordExists( password );
+        } while ( passwordExists )
+
         const emailExists = await this.adminDatabase.findByEmail( email );
         if ( emailExists ) throw new Error( "Email já cadastrado" );
 

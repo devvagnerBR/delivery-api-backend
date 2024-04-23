@@ -17,7 +17,7 @@ export const clientRoutes = async ( app: FastifyInstance ) => {
 
     //products
     app.post( '/:token/client/product/create', { onRequest: [verifyJWT, verifyClientIsOwner] }, client.registerProduct )
-    app.get( '/:token/client/product/list', { onRequest: [verifyJWT, verifyClientIsOwner] }, client.listProducts )
+    app.get( '/:token/client/product/list', { onRequest: [ verifyClientIsOwner] }, client.listProducts )
     app.put( '/:token/client/product/update/:product_id', { onRequest: [verifyJWT, verifyClientIsOwner] }, client.updateProduct )
 
 

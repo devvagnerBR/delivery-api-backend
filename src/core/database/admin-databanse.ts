@@ -24,4 +24,10 @@ export class ADMIN_DATABASE {
         return client;
     }
 
+    async checkIfPasswordExists( password: string ): Promise<Clients | null> {
+        const client = await PRISMA.clients.findFirst( { where: { password } } )
+        return client;
+    }
+
+
 }

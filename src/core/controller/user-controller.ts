@@ -1,9 +1,7 @@
-import { CustomError } from "@/entities/custom-error";
 import { env } from "@/env";
 import { makeUserFactory } from "@/factories/user-factory";
 import { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { Prisma } from '@prisma/client';
 
 export async function USER_CONTROLLER() {
 
@@ -45,7 +43,7 @@ export async function USER_CONTROLLER() {
             secure: true,
             sameSite: true,
             httpOnly: true
-        } ).status( 201 ).send( { message: 'Usuário criado com sucesso' } );
+        } ).status( 201 ).send( { message: 'Usuário criado com sucesso', token } );
     }
 
     async function authenticate( req: FastifyRequest, res: FastifyReply ) {
@@ -78,8 +76,8 @@ export async function USER_CONTROLLER() {
             path: '/',
             secure: true,
             sameSite: true,
-            httpOnly: true
-        } ).status( 200 ).send( { message: 'Usuário autenticado com sucesso' } );
+            httpOnly: true,
+        } ).status( 200 ).send( { message: 'Usuário autenticado com sucesso', token } );
 
     }
 
@@ -140,7 +138,7 @@ export async function USER_CONTROLLER() {
         } )
 
         const { productId } = paramsSchema.parse( req.params );
-        
+
         const tokenAccessParamsSchema = z.object( { token: z.string( { required_error: 'Token de acesso é obrigatório' } ) } )
         const { token: clientId } = tokenAccessParamsSchema.parse( req.params );
 
@@ -162,6 +160,67 @@ export async function USER_CONTROLLER() {
 
     async function registerOrder( req: FastifyRequest, res: FastifyReply ) {
 
+
+        const bodySchema = z.object( {
+            cep: z.string().optional(),
+            street: z.string().optional(),
+            neighborhood: z.string().optional(),
+            city: z.string().optional(),
+            state: z.string().optional(),
+            complement: z.string().optional(),
+            paymentMethod: z.enum( ['CREDIT_ON_DELIVERY', 'DEBIT_ON_DELIVERY', 'PIX', 'MONEY'] ),
+        } )
+
+        const { paymentMethod, cep, street, neighborhood, city, state, complement } = bodySchema.parse( req.body );
+
+        const userId = req.user.sub;
+
+        await userFactory.registerOrder( userId, { cep, street, neighborhood, city, state, complement }, paymentMethod );
+
+        return res.status( 201 ).send( { message: 'Pedido registrado com sucesso' } );
+    }
+
+    async function getOrders( req: FastifyRequest, res: FastifyReply ) {
+
+        const userId = req.user.sub;
+
+        const paginationQuerySchema = z.object( {
+            p: z.string().transform( Number ).optional(),
+
+        } )
+
+        const { p: page } = paginationQuerySchema.parse( req.query );
+        console.log( page );
+
+        const orders = await userFactory.getOrders( userId, page );
+
+        return res.status( 200 ).send( { ...orders, totalItems: orders.totalItems } );
+    }
+
+    async function updateProfile( req: FastifyRequest, res: FastifyReply ) {
+
+        const bodySchema = z.object( {
+            name: z.string().optional(),
+            phone: z.string().optional(),
+            username: z.string().optional(),
+        } )
+
+        const { name, phone, username } = bodySchema.parse( req.body );
+
+        const tokenAccessParamsSchema = z.object( { token: z.string( { required_error: 'Token de acesso é obrigatório' } ) } )
+        const { token: clientId } = tokenAccessParamsSchema.parse( req.params );
+
+        const userId = req.user.sub;
+
+        await userFactory.updateProfile( clientId, userId, name, phone, username );
+
+        return res.status( 200 ).send( { message: 'Perfil atualizado com sucesso' } );
+    }
+
+
+    async function updateAddress( req: FastifyRequest, res: FastifyReply ) {
+
+        
         const bodySchema = z.object( {
             cep: z.string().optional(),
             street: z.string().optional(),
@@ -173,20 +232,15 @@ export async function USER_CONTROLLER() {
 
         const { cep, street, neighborhood, city, state, complement } = bodySchema.parse( req.body );
 
-        const userId = req.user.sub;
-
-        await userFactory.registerOrder( userId, { cep, street, neighborhood, city, state, complement } );
-
-        return res.status( 201 ).send( { message: 'Pedido registrado com sucesso' } );
-    }
-
-    async function getOrders( req: FastifyRequest, res: FastifyReply ) {
+        const tokenAccessParamsSchema = z.object( { token: z.string( { required_error: 'Token de acesso é obrigatório' } ) } )
+        const { token: clientId } = tokenAccessParamsSchema.parse( req.params );
 
         const userId = req.user.sub;
 
-        const orders = await userFactory.getOrders( userId );
 
-        return res.status( 200 ).send( orders );
+        await userFactory.updateAddress( clientId, userId, cep, city, state, street, neighborhood, complement );
+
+        return res.status( 200 ).send( { message: 'Endereço atualizado com sucesso' } );
     }
 
     return {
@@ -198,6 +252,8 @@ export async function USER_CONTROLLER() {
         getCart,
         removeProductFromCart,
         registerOrder,
-        getOrders
+        getOrders,
+        updateProfile,
+        updateAddress
     }
 }

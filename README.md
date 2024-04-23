@@ -24,6 +24,8 @@ Api Delivery
 - [X] Deve ser possível marcar um produto como inativo ou (fora de estoque);
 - [X] Deve ser possível deletar um produto desse cliente;
 - [ ] Deve ser possivel connfigurar alguns produtos como promoção;
+- [ ] Deve ser possivel listar todos os pedidos feitos por usuarios desse cliente
+;
 
 
 ## USER

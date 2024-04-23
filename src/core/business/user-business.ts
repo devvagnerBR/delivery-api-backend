@@ -99,22 +99,51 @@ export class USER_BUSINESS {
         city?: string;
         state?: string;
         complement?: string;
-    } ) {
+
+    }, paymentMethod: 'CREDIT_ON_DELIVERY' | 'DEBIT_ON_DELIVERY' | 'PIX' | 'MONEY' ) {
+
+
+
+        if ( !paymentMethod ) throw new CustomError( 400, 'Método de pagamento é obrigatório' );
 
         const cart = await this.userDatabase.getCart( userId );
         if ( !cart ) throw new CustomError( 404, 'Carrinho não encontrado' );
-        if ( cart.items.length === 0 ) throw new CustomError( 404, 'Carrinho está vazio' );
 
-        await this.userDatabase.registerOrder( userId, body );
+        await this.userDatabase.registerOrder( userId, body, paymentMethod );
 
     }
 
-    async getOrders( userId: string ) {
+    async getOrders( userId: string, page?: number ) {
 
-        const orders = await this.userDatabase.getOrders( userId );
+        const orders = await this.userDatabase.getOrders( userId, page );
         if ( !orders ) throw new CustomError( 404, 'Nenhuma ordem encontrada' );
 
         return orders;
+    }
+
+    async updateProfile( clientId: string, userId: string, name?: string, phone?: string, username?: string ) {
+
+
+
+        if ( !name && !phone && !username ) throw new CustomError( 400, 'Preencha  algum campo' );
+
+        const user = await this.userDatabase.findById( userId, clientId );
+        if ( !user ) throw new CustomError( 404, 'Usuário não encontrado' );
+
+        await this.userDatabase.updateProfile( clientId, userId, name, phone, username );
+
+    }
+
+
+    async updateAddress( clientId: string, userId: string, cep?: string, city?: string, state?: string, street?: string, neighborhood?: string, complement?: string ) {
+
+       
+        if ( !cep && !city && !state && !street && !neighborhood && !complement ) throw new CustomError( 400, 'Preencha algum campo' );
+
+        const user = await this.userDatabase.findById( userId, clientId );
+        if ( !user ) throw new CustomError( 404, 'Usuário não encontrado' );
+
+        await this.userDatabase.updateAddress( userId, cep, city, state, street, neighborhood, complement );
     }
 
 }

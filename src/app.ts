@@ -13,8 +13,8 @@ import { clientRoutes } from "./routes/client-router";
 export const app = fastify();
 
 app.register( cors, {
-    origin: '*',
-    credentials: true
+    origin: ['http://localhost:3000', 'http://localhost:3003'],
+    credentials: true,
 } )
 
 
