@@ -20,8 +20,6 @@ export async function USER_CONTROLLER() {
                 z.string( { required_error: "Nome é obrigatório" } ),
             phone:
                 z.string( { required_error: "Telefone é obrigatório" } )
-                    .min( 10, { message: "Telefone inválido" } )
-                    .max( 11, { message: "Telefone inválido" } )
         } );
 
         const createAccountBody = createAccountBodySchema.safeParse( req.body );
