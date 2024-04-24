@@ -1,5 +1,5 @@
 import { ADMIN_BUSINESS } from "@/core/business/admin-business";
-import { ADMIN_DATABASE } from "@/core/database/admin-databanse";
+import { ADMIN_DATABASE } from "@/core/database/admin-database";
 
 
 export const makeAdminFactory = () => {

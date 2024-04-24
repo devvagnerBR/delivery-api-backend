@@ -12,6 +12,7 @@ export async function ADMIN_CONTROLLER() {
     async function registerNewClient( req: FastifyRequest, res: FastifyReply ) {
 
         const registerNewClientBodySchema = z.object( {
+            id: z.string().optional(),
             name:
                 z.string( { required_error: 'Nome é obrigatório' } )
                     .min( 3, "Nome deve ter no mínimo 3 caracteres" ),
@@ -27,6 +28,7 @@ export async function ADMIN_CONTROLLER() {
         if ( !registerNewClientBody.success ) return res.status( 400 ).send( registerNewClientBody.error.format() )
 
         const body: Prisma.ClientsCreateInput = {
+            id: registerNewClientBody.data.id,
             email: registerNewClientBody.data.email,
             phone: registerNewClientBody.data.phone,
             name: registerNewClientBody.data.name

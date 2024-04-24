@@ -3,9 +3,9 @@ import { Clients, Prisma } from "@prisma/client";
 
 export class ADMIN_DATABASE {
 
-    async registerNewClient( { name, email, phone, password }: Prisma.ClientsCreateInput ) {
+    async registerNewClient( { name, email, phone, password, id }: Prisma.ClientsCreateInput ) {
         await PRISMA.clients.create( {
-            data: { name, email, phone, password }
+            data: { name, email, phone, password, id }
         } )
     }
 

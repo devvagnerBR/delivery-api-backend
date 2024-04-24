@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import { ADMIN_DATABASE } from "../database/admin-databanse";
+import { ADMIN_DATABASE } from "../database/admin-database";
 import { generatePassword } from "@/utils/generate-password";
 
 export class ADMIN_BUSINESS {
@@ -8,7 +8,7 @@ export class ADMIN_BUSINESS {
         private adminDatabase: ADMIN_DATABASE
     ) { }
 
-    async registerNewClient( { name, email, phone }: Prisma.ClientsCreateInput ) {
+    async registerNewClient( { id, name, email, phone }: Prisma.ClientsCreateInput ) {
 
         let password;
         let passwordExists;
@@ -24,6 +24,6 @@ export class ADMIN_BUSINESS {
         const phoneExists = await this.adminDatabase.findByPhone( phone );
         if ( phoneExists ) throw new Error( "Telefone já cadastrado" );
 
-        await this.adminDatabase.registerNewClient( { name, email, phone, password } );
+        await this.adminDatabase.registerNewClient( { id, name, email, phone, password } );
     }
 }
