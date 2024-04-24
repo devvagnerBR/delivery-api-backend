@@ -23,9 +23,6 @@ export async function ADMIN_CONTROLLER() {
                     .min( 11, "Telefone deve ter no mínimo 11 caracteres" ),
         } );
 
-        const tokenAccessParamsSchema = z.object( { token: z.string( { required_error: 'Token de acesso é obrigatório' } ) } )
-        const { token } = tokenAccessParamsSchema.parse( req.params );
-        
         const registerNewClientBody = registerNewClientBodySchema.safeParse( req.body );
         if ( !registerNewClientBody.success ) return res.status( 400 ).send( registerNewClientBody.error.format() )
 
