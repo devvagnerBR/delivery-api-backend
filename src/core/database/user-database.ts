@@ -1,6 +1,8 @@
 import { PRISMA } from "@/data-providers/prisma"
 import { CustomError } from "@/entities/custom-error";
-import { Prisma, CartItem, User, Address } from "@prisma/client";
+import { Address, CartItem, Prisma, User } from '@prisma/client';
+
+
 
 
 type UserWithoutPassword = Omit<User, 'password' | 'client_id' | 'role'>
@@ -28,6 +30,8 @@ export class USER_DATABASE {
 
         await PRISMA.user.create( {
             data: {
+                name: data.name,
+                phone: data.phone,
                 email: data.email,
                 password: data.password,
                 username: data.username,
@@ -53,6 +57,18 @@ export class USER_DATABASE {
             where: {
                 email_client_id: {
                     email,
+                    client_id: clientId
+                }
+            }
+        } )
+        return user;
+    }
+
+    async findByPhone( phone: string, clientId: string ): Promise<User | null> {
+        const user = await PRISMA.user.findUnique( {
+            where: {
+                phone_client_id: {
+                    phone,
                     client_id: clientId
                 }
             }
@@ -240,14 +256,10 @@ export class USER_DATABASE {
 
 
         const cart = await this.getCart( userId );
-
         if ( !cart ) throw new CustomError( 404, 'Carrinho não encontrado' );
-        if ( cart.items.length === 0 ) throw new CustomError( 404, 'Carrinho está vazio' );
 
         const address = await this.getAddress( userId );
         if ( !address ) throw new CustomError( 404, 'Endereço não encontrado' );
-
-        if ( body ) await this.registerAddress( userId, body );
 
         await PRISMA.order.create( {
 
@@ -310,13 +322,13 @@ export class USER_DATABASE {
         } )
 
 
-        const totalItems = await PRISMA.order.count({
+        const totalItems = await PRISMA.order.count( {
             where: {
                 user_id: userId
             }
-        });
+        } );
 
-      
+
         return { orders, totalItems }
     }
 

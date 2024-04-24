@@ -25,6 +25,7 @@ model User {
 
   @@unique([username, client_id])
   @@unique([email, client_id])
+  @@unique([phone, client_id])
   @@map("users")
 }
 

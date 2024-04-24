@@ -1,6 +1,6 @@
-import { Address, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { USER_DATABASE } from "../database/user-database";
-import *  as bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcryptjs';
 import { env } from "@/env";
 import { CustomError } from "@/entities/custom-error";
 import { CLIENT_DATABASE } from "../database/client-database";
@@ -15,18 +15,19 @@ export class USER_BUSINESS {
         private clientDatabase: CLIENT_DATABASE
     ) { }
 
-    async create( { email, username, password }: Prisma.UserCreateInput, clientId: string ) {
+    async create( { email, phone, name, password }: Omit<Prisma.UserCreateInput, 'username'>, clientId: string ) {
 
+        let username = email.split( '@' )[0];
 
         const usernameExists = await this.userDatabase.findByUsername( username, clientId );
-        if ( usernameExists ) throw new CustomError( 409, 'Esse nome de usuário já existe' );
+        if ( usernameExists ) username = email.split( '@' )[0] + Math.floor( Math.random() * 1000 );
 
         const emailExists = await this.userDatabase.findByEmail( email, clientId );
         if ( emailExists ) throw new CustomError( 409, 'Esse email já foi cadastrado' );
 
         const passwordHash = await bcrypt.hash( password, env.BCRYPT_SALT );
 
-        await this.userDatabase.create( { email, username, password: passwordHash }, clientId );
+        await this.userDatabase.create( { email, username, phone, name, password: passwordHash }, clientId );
     }
 
     async authenticate( { email, password }: { email: string, password: string }, clientId: string ) {
@@ -102,13 +103,9 @@ export class USER_BUSINESS {
 
     }, paymentMethod: 'CREDIT_ON_DELIVERY' | 'DEBIT_ON_DELIVERY' | 'PIX' | 'MONEY' ) {
 
-
-
         if ( !paymentMethod ) throw new CustomError( 400, 'Método de pagamento é obrigatório' );
 
-        const cart = await this.userDatabase.getCart( userId );
-        if ( !cart ) throw new CustomError( 404, 'Carrinho não encontrado' );
-
+        if ( body ) await this.userDatabase.registerAddress( userId, body );
         await this.userDatabase.registerOrder( userId, body, paymentMethod );
 
     }
@@ -137,7 +134,7 @@ export class USER_BUSINESS {
 
     async updateAddress( clientId: string, userId: string, cep?: string, city?: string, state?: string, street?: string, neighborhood?: string, complement?: string ) {
 
-       
+
         if ( !cep && !city && !state && !street && !neighborhood && !complement ) throw new CustomError( 400, 'Preencha algum campo' );
 
         const user = await this.userDatabase.findById( userId, clientId );

@@ -10,15 +10,18 @@ export async function USER_CONTROLLER() {
     async function create( req: FastifyRequest, res: FastifyReply ) {
 
         const createAccountBodySchema = z.object( {
-            username:
-                z.string( { required_error: 'Username é obrigatório' } )
-                    .min( 3, " Username deve ter no mínimo 3 caracteres" ),
             email:
                 z.string( { required_error: "Email é obrigatório" } )
                     .email( "Email inválido" ),
             password:
                 z.string( { required_error: "Senha é obrigatório" } )
                     .min( 6, "Senha deve ter no mínimo 6 caracteres" ),
+            name:
+                z.string( { required_error: "Nome é obrigatório" } ),
+            phone:
+                z.string( { required_error: "Telefone é obrigatório" } )
+                    .min( 10, { message: "Telefone inválido" } )
+                    .max( 11, { message: "Telefone inválido" } )
         } );
 
         const createAccountBody = createAccountBodySchema.safeParse( req.body );
@@ -192,7 +195,7 @@ export async function USER_CONTROLLER() {
         const { p: page } = paginationQuerySchema.parse( req.query );
 
         const orders = await userFactory.getOrders( userId, page );
- 
+
         return res.status( 200 ).send( { ...orders, totalItems: orders.totalItems } );
     }
 
