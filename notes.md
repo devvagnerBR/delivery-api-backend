@@ -14,5 +14,3 @@ npx prisma migrate dev --name update = para atualizar a migracao
 
     ## FUNCIONALIDADES
     
-    
-    {{BASE_URL_DEV}}/{{CLIENT_ID}}/client/product/list?category=bebidas&name=coca

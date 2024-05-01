@@ -25,6 +25,9 @@ export class USER_BUSINESS {
         const emailExists = await this.userDatabase.findByEmail( email, clientId );
         if ( emailExists ) throw new CustomError( 409, 'Esse email já foi cadastrado' );
 
+        const phoneExists = await this.userDatabase.findByPhone( phone!, clientId );
+        if ( phoneExists ) throw new CustomError( 409, 'Esse telefone já foi cadastrado' );
+
         const passwordHash = await bcrypt.hash( password, env.BCRYPT_SALT );
 
         await this.userDatabase.create( { email, username, phone, name, password: passwordHash }, clientId );

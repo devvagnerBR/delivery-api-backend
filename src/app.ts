@@ -29,8 +29,6 @@ app.register( fastifyJwt, {
     }
 } )
 
-
-
 app.register( userRouter );
 app.register( adminRoutes );
 app.register( clientRoutes );
